@@ -133,10 +133,9 @@ pipeline {
                 cd ~/todo-app-capstone
                 export BACKEND_IMAGE=737441257613.dkr.ecr.us-east-1.amazonaws.com/todolist-backend:ec9ca84
                 export FRONTEND_IMAGE=737441257613.dkr.ecr.us-east-1.amazonaws.com/todolist-frontend:ec9ca84
-                
-                # Giữ nguyên $, không cần \ 
-                docker rmi $BACKEND_IMAGE $FRONTEND_IMAGE || true 
-                
+
+                docker rmi $BACKEND_IMAGE $FRONTEND_IMAGE || true
+
                 docker compose pull
                 docker compose up -d --remove-orphans
                 echo 'Deploy to App VM done!'
