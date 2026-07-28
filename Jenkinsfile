@@ -144,8 +144,7 @@ pipeline {
                         export BACKEND_IMAGE=${ECR_REPO_BACKEND}:${IMAGE_TAG}
                         export FRONTEND_IMAGE=${ECR_REPO_FRONTEND}:${IMAGE_TAG}
 
-                        docker compose pull
-                        docker compose up -d --remove-orphans
+        docker compose up -d --pull always --remove-orphans
 
                         echo "Deploy to App VM done!"
                     '
