@@ -130,6 +130,12 @@ pipeline {
                 echo "Deploying to App VM..."
                 sshagent(['app-vm-ssh-key']) {
                     sh """
+                        export HOME=/var/jenkins_home
+
+                        echo "=== SSH Agent Keys ==="
+                        ssh-add -l || echo "No keys loaded in SSH agent!"
+                        echo "======================"
+
                         # Lấy ECR password trên Jenkins (có credentials) rồi pipe sang App VM
                         aws ecr get-login-password --region ${AWS_REGION} | \
                             ssh -o StrictHostKeyChecking=no ${APP_VM_USER}@${APP_VM_HOST} \
