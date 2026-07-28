@@ -139,7 +139,7 @@ pipeline {
 
                     # Deploy trên App VM
                     ssh -i \$SSH_KEY -o StrictHostKeyChecking=no ${APP_VM_USER}@${APP_VM_HOST} '
-                        cd ~/todolist
+                        cd ~/todo-app-capstone
 
                         export BACKEND_IMAGE=${ECR_REPO_BACKEND}:${IMAGE_TAG}
                         export FRONTEND_IMAGE=${ECR_REPO_FRONTEND}:${IMAGE_TAG}
