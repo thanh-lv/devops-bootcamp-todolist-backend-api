@@ -93,7 +93,7 @@ pipeline {
         }
 
         // ============================================================
-        // CD STAGES — chỉ chạy khi push to master branch
+        // CD STAGES — run only push to master branch
         // ============================================================
 
         stage('5. Push to ECR') {
