@@ -121,28 +121,43 @@ pipeline {
         }
 
         stage('6. Deploy to Dev (App VM)') {
-            when {
-                expression {
-                    return env.BRANCH_NAME == 'master' || env.GIT_BRANCH == 'master' || env.GIT_BRANCH == 'origin/master'
-                }
-            }
-            steps {
-                echo "Deploying to App VM..."
-       sh '''
-            ssh -i /var/jenkins_home/.ssh/app-vm-key -o StrictHostKeyChecking=no ubuntu@23.21.212.1 "
-                cd ~/todo-app-capstone
-                export BACKEND_IMAGE=737441257613.dkr.ecr.us-east-1.amazonaws.com/todolist-backend:ec9ca84
-                export FRONTEND_IMAGE=737441257613.dkr.ecr.us-east-1.amazonaws.com/todolist-frontend:ec9ca84
-
-                docker rmi $BACKEND_IMAGE $FRONTEND_IMAGE || true
-
-                docker compose pull
-                docker compose up -d --remove-orphans
-                echo 'Deploy to App VM done!'
-            "
-'''
-            }
+    when {
+        expression {
+            return env.BRANCH_NAME == 'master' || env.GIT_BRANCH == 'master' || env.GIT_BRANCH == 'origin/master'
         }
+    }
+    steps {
+        echo "Deploying to App VM with tag ${IMAGE_TAG}..."
+
+            sh """
+                ssh -i /var/jenkins_home/.ssh/app-vm-key -o StrictHostKeyChecking=no ${APP_VM_USER}@${APP_VM_HOST} '
+                    set -e
+                    cd ~/todo-app-capstone
+
+                    # Login ECR
+                    aws ecr get-login-password --region us-east-1 | \\
+                        docker login --username AWS --password-stdin 737441257613.dkr.ecr.us-east-1.amazonaws.com
+
+                    export BACKEND_IMAGE=${ECR_REPO_BACKEND}:${IMAGE_TAG}
+                    export FRONTEND_IMAGE=${ECR_REPO_FRONTEND}:${IMAGE_TAG}
+
+                    echo ">>> BACKEND_IMAGE = \$BACKEND_IMAGE"
+                    echo ">>> FRONTEND_IMAGE = \$FRONTEND_IMAGE"
+
+                    # Xóa image cũ
+                    docker rmi \$BACKEND_IMAGE \$FRONTEND_IMAGE 2>/dev/null || true
+
+                    # Pull image mới từ ECR
+                    docker compose pull
+
+                    # Deploy
+                    docker compose up -d --remove-orphans --force-recreate
+
+                    echo ">>> Deploy to App VM done!"
+                '
+            """
+    }
+}
 
         // stage('7. Approval Gate') {
         //     when {
