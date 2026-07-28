@@ -128,33 +128,28 @@ pipeline {
             }
             steps {
                 echo "Deploying to App VM..."
-                sshagent(['app-vm-ssh-key']) {
-                    sh """
-                        export HOME=/var/jenkins_home
+                sh """
+                    export HOME=/var/jenkins_home
+                    SSH_KEY=/var/jenkins_home/.ssh/app-vm-key
 
-                        echo "=== SSH Agent Keys ==="
-                        ssh-add -l || echo "No keys loaded in SSH agent!"
-                        echo "======================"
+                    # Lấy ECR password trên Jenkins rồi pipe sang App VM
+                    aws ecr get-login-password --region ${AWS_REGION} | \
+                        ssh -i \$SSH_KEY -o StrictHostKeyChecking=no ${APP_VM_USER}@${APP_VM_HOST} \
+                            "docker login --username AWS --password-stdin ${ECR_REGISTRY}"
 
-                        # Lấy ECR password trên Jenkins (có credentials) rồi pipe sang App VM
-                        aws ecr get-login-password --region ${AWS_REGION} | \
-                            ssh -o StrictHostKeyChecking=no ${APP_VM_USER}@${APP_VM_HOST} \
-                                "docker login --username AWS --password-stdin ${ECR_REGISTRY}"
+                    # Deploy trên App VM
+                    ssh -i \$SSH_KEY -o StrictHostKeyChecking=no ${APP_VM_USER}@${APP_VM_HOST} '
+                        cd ~/todolist
 
-                        # Deploy trên App VM
-                        ssh -o StrictHostKeyChecking=no ${APP_VM_USER}@${APP_VM_HOST} '
-                            cd ~/todolist
+                        export BACKEND_IMAGE=${ECR_REPO_BACKEND}:${IMAGE_TAG}
+                        export FRONTEND_IMAGE=${ECR_REPO_FRONTEND}:${IMAGE_TAG}
 
-                            export BACKEND_IMAGE=${ECR_REPO_BACKEND}:${IMAGE_TAG}
-                            export FRONTEND_IMAGE=${ECR_REPO_FRONTEND}:${IMAGE_TAG}
+                        docker compose pull
+                        docker compose up -d --remove-orphans
 
-                            docker compose pull
-                            docker compose up -d --remove-orphans
-
-                            echo "Deploy to App VM done!"
-                        '
-                    """
-                }
+                        echo "Deploy to App VM done!"
+                    '
+                """
             }
         }
 
