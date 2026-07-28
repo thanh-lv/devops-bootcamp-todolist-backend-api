@@ -14,7 +14,7 @@ pipeline {
     stages {
 
         // ============================================================
-        // CI STAGES — chạy cả khi PR lẫn push to main
+        // CI STAGES — chạy cả khi PR lẫn push to master
         // ============================================================
 
         stage('1. Checkout') {
@@ -93,12 +93,12 @@ pipeline {
         }
 
         // ============================================================
-        // CD STAGES — chỉ chạy khi push to main branch
+        // CD STAGES — chỉ chạy khi push to master branch
         // ============================================================
 
         stage('5. Push to ECR') {
             when {
-                branch 'main'
+                branch 'master'
             }
             steps {
                 echo "Pushing images to ECR..."
@@ -117,7 +117,7 @@ pipeline {
 
         stage('6. Deploy to Dev (App VM)') {
             when {
-                branch 'main'
+                branch 'master'
             }
             steps {
                 echo "Deploying to App VM..."
@@ -144,7 +144,7 @@ pipeline {
 
         // stage('7. Approval Gate') {
         //     when {
-        //         branch 'main'
+        //         branch 'master'
         //     }
         //     steps {
         //         timeout(time: 30, unit: 'MINUTES') {
@@ -157,7 +157,7 @@ pipeline {
 
         // stage('8. Deploy to Production (K8s)') {
         //     when {
-        //         branch 'main'
+        //         branch 'master'
         //     }
         //     steps {
         //         echo "Deploying to Kubernetes..."
