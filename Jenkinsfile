@@ -144,7 +144,7 @@ pipeline {
                         export BACKEND_IMAGE=${ECR_REPO_BACKEND}:${IMAGE_TAG}
                         export FRONTEND_IMAGE=${ECR_REPO_FRONTEND}:${IMAGE_TAG}
 
-                        docker rmi $BACKEND_IMAGE $FRONTEND_IMAGE || true
+                        docker rmi ${BACKEND_IMAGE} ${FRONTEND_IMAGE} || true
                         docker compose pull
                         docker compose up -d --remove-orphans
 
