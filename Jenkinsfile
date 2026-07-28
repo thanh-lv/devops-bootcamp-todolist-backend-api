@@ -130,10 +130,15 @@ pipeline {
                 echo "Deploying to App VM..."
                 sshagent(['app-vm-ssh-key']) {
                     sh """
-                        ssh -o StrictHostKeyChecking=no ${APP_VM_USER}@${APP_VM_HOST} '
-                            aws ecr get-login-password --region ${AWS_REGION} | \
-                                docker login --username AWS --password-stdin ${ECR_REGISTRY}
+                        export HOME=/var/jenkins_home
 
+                        # Lấy ECR password trên Jenkins (có credentials) rồi pipe sang App VM
+                        aws ecr get-login-password --region ${AWS_REGION} | \
+                            ssh -o StrictHostKeyChecking=no ${APP_VM_USER}@${APP_VM_HOST} \
+                                "docker login --username AWS --password-stdin ${ECR_REGISTRY}"
+
+                        # Deploy trên App VM
+                        ssh -o StrictHostKeyChecking=no ${APP_VM_USER}@${APP_VM_HOST} '
                             cd ~/todolist
 
                             export BACKEND_IMAGE=${ECR_REPO_BACKEND}:${IMAGE_TAG}
