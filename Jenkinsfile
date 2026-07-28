@@ -26,6 +26,7 @@ pipeline {
                     git clone https://github.com/thanh-lv/devops-bootcamp-todolist-backend-api
                     git clone https://github.com/thanh-lv/devops-bootcamp-todolist-frontend
                 """
+                echo "BRANCH_NAME=${env.BRANCH_NAME}, GIT_BRANCH=${env.GIT_BRANCH}"
             }
         }
 
@@ -98,7 +99,9 @@ pipeline {
 
         stage('5. Push to ECR') {
             when {
-                branch 'master'
+                expression {
+                    return env.BRANCH_NAME == 'master' || env.GIT_BRANCH == 'master' || env.GIT_BRANCH == 'origin/master'
+                }
             }
             steps {
                 echo "Pushing images to ECR..."
@@ -124,7 +127,9 @@ pipeline {
 
         stage('6. Deploy to Dev (App VM)') {
             when {
-                branch 'master'
+                expression {
+                    return env.BRANCH_NAME == 'master' || env.GIT_BRANCH == 'master' || env.GIT_BRANCH == 'origin/master'
+                }
             }
             steps {
                 echo "Deploying to App VM..."
