@@ -12,6 +12,9 @@ const pool = new Pool({
   max: 10, // Maximum number of clients in the pool
   idleTimeoutMillis: 30000,
   connectionTimeoutMillis: 2000,
+  ssl: {
+    rejectUnauthorized: false, // omit verify certificate for RDS
+  },
 });
 
 pool.on('connect', () => {
