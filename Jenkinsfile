@@ -20,7 +20,12 @@ pipeline {
         stage('1. Checkout') {
             steps {
                 echo "Checking out source code..."
-                checkout scm
+                sh """
+                    rm -rf devops-bootcamp-todolist-backend-api devops-bootcamp-todolist-frontend
+
+                    git clone https://github.com/thanh-lv/devops-bootcamp-todolist-backend-api
+                    git clone https://github.com/thanh-lv/devops-bootcamp-todolist-frontend
+                """
             }
         }
 
