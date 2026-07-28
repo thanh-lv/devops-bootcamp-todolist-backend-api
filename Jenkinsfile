@@ -128,28 +128,20 @@ pipeline {
             }
             steps {
                 echo "Deploying to App VM..."
-                sh """
-                    export HOME=/var/jenkins_home
-                    SSH_KEY=/var/jenkins_home/.ssh/app-vm-key
-
-                    # Lấy ECR password trên Jenkins rồi pipe sang App VM
-                    aws ecr get-login-password --region ${AWS_REGION} | \
-                        ssh -i \$SSH_KEY -o StrictHostKeyChecking=no ${APP_VM_USER}@${APP_VM_HOST} \
-                            "docker login --username AWS --password-stdin ${ECR_REGISTRY}"
-
-                    # Deploy trên App VM
-                    ssh -i \$SSH_KEY -o StrictHostKeyChecking=no ${APP_VM_USER}@${APP_VM_HOST} '
-                        cd ~/todo-app-capstone
-
-                        export BACKEND_IMAGE=${ECR_REPO_BACKEND}:${IMAGE_TAG}
-                        export FRONTEND_IMAGE=${ECR_REPO_FRONTEND}:${IMAGE_TAG}
-
-                        docker rmi \\$BACKEND_IMAGE \\$FRONTEND_IMAGE || true
-                        docker compose pull
-                        docker compose up -d --remove-orphans
-                        echo "Deploy to App VM done!"
-                    '
-                """
+       sh '''
+            ssh -i /var/jenkins_home/.ssh/app-vm-key -o StrictHostKeyChecking=no ubuntu@23.21.212.1 "
+                cd ~/todo-app-capstone
+                export BACKEND_IMAGE=737441257613.dkr.ecr.us-east-1.amazonaws.com/todolist-backend:ec9ca84
+                export FRONTEND_IMAGE=737441257613.dkr.ecr.us-east-1.amazonaws.com/todolist-frontend:ec9ca84
+                
+                # Giữ nguyên $, không cần \ 
+                docker rmi $BACKEND_IMAGE $FRONTEND_IMAGE || true 
+                
+                docker compose pull
+                docker compose up -d --remove-orphans
+                echo 'Deploy to App VM done!'
+            "
+'''
             }
         }
 
