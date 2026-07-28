@@ -130,6 +130,8 @@ pipeline {
         echo "Deploying to App VM with tag ${IMAGE_TAG}..."
 
             sh """
+                export HOME=/var/jenkins_home
+
                 ssh -i /var/jenkins_home/.ssh/app-vm-key -o StrictHostKeyChecking=no ${APP_VM_USER}@${APP_VM_HOST} '
                     set -e
                     cd ~/todo-app-capstone
