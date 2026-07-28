@@ -106,6 +106,8 @@ pipeline {
             steps {
                 echo "Pushing images to ECR..."
                 sh """
+                    export HOME=/var/jenkins_home
+
                     aws ecr get-login-password --region ${AWS_REGION} | \
                         docker login --username AWS --password-stdin ${ECR_REGISTRY}
 
