@@ -121,45 +121,47 @@ pipeline {
         }
 
         stage('6. Deploy to Dev (App VM)') {
-    when {
-        expression {
-            return env.BRANCH_NAME == 'master' || env.GIT_BRANCH == 'master' || env.GIT_BRANCH == 'origin/master'
+            when {
+                expression {
+                    return env.BRANCH_NAME == 'master' || env.GIT_BRANCH == 'master' || env.GIT_BRANCH == 'origin/master'
+                }
+            }
+            steps {
+                echo "Deploying to App VM with tag ${IMAGE_TAG}..."
+
+                sh """
+                    export HOME=/var/jenkins_home
+
+                    # Lấy password ECR trên Jenkins (đã có AWS CLI)
+                    ECR_PASSWORD=\$(aws ecr get-login-password --region ${AWS_REGION})
+
+                    ssh -i /var/jenkins_home/.ssh/app-vm-key -o StrictHostKeyChecking=no ${APP_VM_USER}@${APP_VM_HOST} "
+                        set -e
+                        cd ~/todo-app-capstone
+
+                        # Login ECR bằng password được truyền từ Jenkins
+                        echo '\$ECR_PASSWORD' | docker login --username AWS --password-stdin ${ECR_REGISTRY}
+
+                        export BACKEND_IMAGE=${ECR_REPO_BACKEND}:${IMAGE_TAG}
+                        export FRONTEND_IMAGE=${ECR_REPO_FRONTEND}:${IMAGE_TAG}
+
+                        echo '>>> BACKEND_IMAGE = '\$BACKEND_IMAGE
+                        echo '>>> FRONTEND_IMAGE = '\$FRONTEND_IMAGE
+
+                        # Xóa image cũ
+                        docker rmi \$BACKEND_IMAGE \$FRONTEND_IMAGE 2>/dev/null || true
+
+                        # Pull image mới từ ECR
+                        docker compose pull
+
+                        # Deploy
+                        docker compose up -d --remove-orphans --force-recreate
+
+                        echo '>>> Deploy to App VM done!'
+                    "
+                """
+            }
         }
-    }
-    steps {
-        echo "Deploying to App VM with tag ${IMAGE_TAG}..."
-
-            sh """
-                export HOME=/var/jenkins_home
-
-                ssh -i /var/jenkins_home/.ssh/app-vm-key -o StrictHostKeyChecking=no ${APP_VM_USER}@${APP_VM_HOST} '
-                    set -e
-                    cd ~/todo-app-capstone
-
-                    # Login ECR
-                    aws ecr get-login-password --region us-east-1 | \\
-                        docker login --username AWS --password-stdin 737441257613.dkr.ecr.us-east-1.amazonaws.com
-
-                    export BACKEND_IMAGE=${ECR_REPO_BACKEND}:${IMAGE_TAG}
-                    export FRONTEND_IMAGE=${ECR_REPO_FRONTEND}:${IMAGE_TAG}
-
-                    echo ">>> BACKEND_IMAGE = \$BACKEND_IMAGE"
-                    echo ">>> FRONTEND_IMAGE = \$FRONTEND_IMAGE"
-
-                    # Xóa image cũ
-                    docker rmi \$BACKEND_IMAGE \$FRONTEND_IMAGE 2>/dev/null || true
-
-                    # Pull image mới từ ECR
-                    docker compose pull
-
-                    # Deploy
-                    docker compose up -d --remove-orphans --force-recreate
-
-                    echo ">>> Deploy to App VM done!"
-                '
-            """
-    }
-}
 
         // stage('7. Approval Gate') {
         //     when {
