@@ -112,6 +112,8 @@ pipeline {
                     secretKeyVariable: 'AWS_SECRET_ACCESS_KEY'
                 ]]) {
                     sh """
+                        echo "DEBUG: Using Access Key prefix: \${AWS_ACCESS_KEY_ID:0:8}..."
+
                         docker run --rm \
                             -e AWS_ACCESS_KEY_ID=\$AWS_ACCESS_KEY_ID \
                             -e AWS_SECRET_ACCESS_KEY=\$AWS_SECRET_ACCESS_KEY \
