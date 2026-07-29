@@ -24,7 +24,7 @@ app.use(morgan('dev'));
 
 // Health check endpoint for Kubernetes liveness probe
 app.get('/health', (req: Request, res: Response) => {
-  res.status(200).json({ status: 'ok', timestamp: new Date().toISOString() });
+  res.status(200).json({ status: 'ok demo', timestamp: new Date().toISOString() });
 });
 
 // Readiness check endpoint for Kubernetes readiness probe
