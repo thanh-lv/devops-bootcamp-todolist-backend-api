@@ -25,6 +25,7 @@ pipeline {
                 sh """
                     docker build \
                         -t ${ECR_REPO_BACKEND}:${IMAGE_TAG} \
+                        -t ${ECR_REPO_BACKEND}:latest \
                         .
                 """
             }
@@ -94,8 +95,10 @@ pipeline {
                         echo \${ECR_PASSWORD} | docker login --username AWS --password-stdin ${ECR_REGISTRY}
 
                         export BACKEND_IMAGE=${ECR_REPO_BACKEND}:${IMAGE_TAG}
+                        export FRONTEND_IMAGE=${ECR_REPO_FRONTEND}:latest
 
                         echo '>>> BACKEND_IMAGE  =' \$BACKEND_IMAGE
+                        echo '>>> FRONTEND_IMAGE =' \$FRONTEND_IMAGE
 
                         docker rmi \$BACKEND_IMAGE 2>/dev/null || true
 
@@ -117,3 +120,4 @@ pipeline {
         }
     }
 }
+
