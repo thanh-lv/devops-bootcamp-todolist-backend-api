@@ -25,7 +25,6 @@ pipeline {
                 sh """
                     docker build \
                         -t ${ECR_REPO_BACKEND}:${IMAGE_TAG} \
-                        -t ${ECR_REPO_BACKEND}:latest \
                         .
                 """
             }
