@@ -72,18 +72,19 @@ pipeline {
                         docker login --username AWS --password-stdin ${ECR_REGISTRY}
 
                     docker push ${ECR_REPO_BACKEND}:${IMAGE_TAG}
+                    docker push ${ECR_REPO_BACKEND}:latest
                 """
             }
         }
 
-        stage('6. Deploy to Dev (App VM)') {
+        stage('6. Deploy Backend to Dev (App VM)') {
             when {
                 expression {
                     return env.BRANCH_NAME == 'master' || env.GIT_BRANCH == 'master' || env.GIT_BRANCH == 'origin/master'
                 }
             }
             steps {
-                echo "Deploying Backend (tag ${IMAGE_TAG}) + Frontend (latest)..."
+                echo "Deploying Backend (tag ${IMAGE_TAG})..."
                 sh """
                     export HOME=/var/jenkins_home
                     ECR_PASSWORD=\$(aws ecr get-login-password --region ${AWS_REGION})
@@ -100,12 +101,11 @@ pipeline {
                         echo '>>> BACKEND_IMAGE  =' \$BACKEND_IMAGE
                         echo '>>> FRONTEND_IMAGE =' \$FRONTEND_IMAGE
 
-                        docker rmi \$BACKEND_IMAGE 2>/dev/null || true
+                        # Chỉ restart backend, không đụng frontend
+                        docker compose pull backend
+                        docker compose up -d --no-deps --force-recreate backend
 
-                        docker compose pull
-                        docker compose up -d --remove-orphans --force-recreate
-
-                        echo '>>> Deploy done!'
+                        echo '>>> Deploy Backend done!'
                     "
                 """
             }
@@ -120,4 +120,3 @@ pipeline {
         }
     }
 }
-
