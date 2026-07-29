@@ -5,6 +5,7 @@ import dotenv from 'dotenv';
 import todoRoutes from './routes/todoRoutes';
 import todoModel from './models/todoModel';
 import pool from './config/database';
+import { register, httpRequestCounter, httpRequestDuration } from './metrics';
 
 dotenv.config();
 
@@ -22,6 +23,24 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(morgan('dev'));
 
+// ============================================================
+// Metrics middleware — đo latency và đếm request cho mọi route
+// ============================================================
+app.use((req: Request, res: Response, next: any) => {
+  const end = httpRequestDuration.startTimer();
+  res.on('finish', () => {
+    const route = req.route?.path || req.path;
+    const labels = {
+      method: req.method,
+      route,
+      status_code: res.statusCode,
+    };
+    httpRequestCounter.inc(labels);
+    end(labels);
+  });
+  next();
+});
+
 // Health check endpoint for Kubernetes liveness probe
 app.get('/health', (req: Request, res: Response) => {
   res.status(200).json({ status: 'ok demo', timestamp: new Date().toISOString() });
@@ -30,7 +49,6 @@ app.get('/health', (req: Request, res: Response) => {
 // Readiness check endpoint for Kubernetes readiness probe
 app.get('/ready', async (req: Request, res: Response) => {
   try {
-    // Check database connection
     await pool.query('SELECT 1');
     res.status(200).json({ 
       status: 'ready', 
@@ -47,6 +65,18 @@ app.get('/ready', async (req: Request, res: Response) => {
   }
 });
 
+// ============================================================
+// Metrics endpoint — Prometheus scrape tại đây
+// ============================================================
+app.get('/metrics', async (req: Request, res: Response) => {
+  try {
+    res.set('Content-Type', register.contentType);
+    res.send(await register.metrics());
+  } catch (error) {
+    res.status(500).send('Error generating metrics');
+  }
+});
+
 // API routes
 app.use('/api/todos', todoRoutes);
 
@@ -58,6 +88,7 @@ app.get('/', (req: Request, res: Response) => {
     endpoints: {
       health: '/health',
       ready: '/ready',
+      metrics: '/metrics',
       todos: '/api/todos'
     }
   });
@@ -77,7 +108,6 @@ app.use((err: Error, req: Request, res: Response, next: any) => {
 // Initialize database and start server
 const startServer = async () => {
   try {
-    // Initialize database tables
     await todoModel.initDatabase();
     
     app.listen(PORT, () => {
@@ -85,6 +115,7 @@ const startServer = async () => {
       console.log(`Environment: ${process.env.NODE_ENV || 'development'}`);
       console.log(`Health check: http://localhost:${PORT}/health`);
       console.log(`Readiness check: http://localhost:${PORT}/ready`);
+      console.log(`Metrics: http://localhost:${PORT}/metrics`);
       console.log(`API endpoint: http://localhost:${PORT}/api/todos`);
     });
   } catch (error) {
